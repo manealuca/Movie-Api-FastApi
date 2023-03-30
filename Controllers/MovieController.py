@@ -1,9 +1,14 @@
 from movies import movies
-from Models.movie import Movie
+from Entities.movie import Movie
 from fastapi import Path, Query,APIRouter,Depends
 from typing import List
 from fastapi.responses import HTMLResponse, JSONResponse
 from Controllers.UserController import JWTBearer
+from Models.movie import Movie as MovieModel
+from fastapi.encoders import jsonable_encoder
+from Config.database import Session
+
+db = Session()
 router = APIRouter()
 def updateMovie(movie: Movie, movie_to_update: dict):
     movie_to_update['title'] = movie.title
@@ -18,15 +23,17 @@ class Movierouter:
         #podemos retornar tanto diccionarios como codigo html
         #return {"response:"HelloWord""}
         return HTMLResponse('<h1>World</h1>')
+    
 
     @router.get('/movies',tags=['movies'],response_model=List[Movie])
     def get_movies()->List[Movie]:
-        return JSONResponse(content=movies)
+        return JSONResponse(content=jsonable_encoder(db.query(MovieModel).all()))
+
 
     @router.get('/movies/{id}',tags=['movies'],response_model=Movie,status_code=200)
     async def get_movie_by_id(id:int = Path(ge=1,le=2023))->Movie:
         try:
-            return JSONResponse(status_code=200,content =next(filter(lambda x: x['id'] == id, movies), None))
+            return JSONResponse(status_code=200,content =jsonable_encoder(db.query(MovieModel).filter(MovieModel.id == id)))
         except IndexError:
             return{"error":"Pelicula no encontrada"}
         #try:
@@ -42,7 +49,10 @@ class Movierouter:
 
     @router.post('/movies',tags=['movies'])
     async def create_movie(movie: Movie):
-        movie.id = max(movies, key =lambda x: x['id'])['id']+1
+        new_movie = MovieModel(**movie.dict())
+        new_movie.id = max(db.query(MovieModel).all(), key=lambda x: x.id).id + 1
+        db.add(new_movie)
+        db.commit()
         movies.append(movie.dict())
         return {"movie": movie}
 

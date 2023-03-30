@@ -1,4 +1,4 @@
-from Models.User import User
+from Entities.User import User
 from fastapi import Path, Query,APIRouter, Request, HTTPException
 from fastapi.security import HTTPBearer
 from typing import List
