@@ -1,7 +1,9 @@
-from fastapi import FastAPI
-
+from fastapi import Header, Depends, FastAPI, Path, Query
+from routes import router
 app = FastAPI()
+app.title = "Api de peliculas"
+app.version = "1.0.0"
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+app.include_router(router,prefix="")
+
+
